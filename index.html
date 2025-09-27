@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css">
+  <title>Login</title>
+  
+</head>
+<body>
+
+  <h2>Registro</h2>
+<input id="regUser" placeholder="Usuario" />
+<input id="regPass" type="password" placeholder="Contraseña (mín 6 chars)" />
+<button onclick="register()">Registrar</button>
+<p id="regMsg"></p>
+
+<hr/>
+
+<h2>Login</h2>
+<input id="logUser" placeholder="Usuario" />
+<input id="logPass" type="password" placeholder="Contraseña" />
+<button onclick="login()">Entrar</button>
+<p id="logMsg"></p>
+
+<hr/>
+
+<div id="welcomeMsg" style="display:none;">
+  <h3>¡Bienvenido, <span id="userName"></span>!</h3>
+  <button onclick="logout()">Cerrar sesión</button>
+</div>
+<script>
+// Función para hashear con SHA-256 usando la API Web Crypto
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Registrar usuario (guardar username + hash en localStorage)
+async function register() {
+  const user = document.getElementById('regUser').value.trim();
+  const pass = document.getElementById('regPass').value;
+
+  const msg = document.getElementById('regMsg');
+  if (user.length === 0 || pass.length < 6) {
+    msg.textContent = "Usuario obligatorio y contraseña mínimo 6 caracteres";
+    msg.className = 'err';
+    return;
+  }
+
+  if (localStorage.getItem('user_' + user)) {
+    msg.textContent = "Usuario ya registrado";
+    msg.className = 'err';
+    return;
+  }
+
+  const hash = await hashPassword(pass);
+  localStorage.setItem('user_' + user, hash);
+
+  msg.textContent = "Usuario registrado correctamente";
+  msg.className = 'msg';
+
+  // Limpiar campos
+  document.getElementById('regUser').value = '';
+  document.getElementById('regPass').value = '';
+}
+
+// Login usuario (comparar hash)
+async function login() {
+  const user = document.getElementById('logUser').value.trim();
+  const pass = document.getElementById('logPass').value;
+
+  const msg = document.getElementById('logMsg');
+  const storedHash = localStorage.getItem('user_' + user);
+
+  if (!storedHash) {
+    msg.textContent = "Usuario no registrado";
+    msg.className = 'err';
+    return;
+  }
+
+  const hash = await hashPassword(pass);
+  if (hash === storedHash) {
+    msg.textContent = "Login correcto";
+    msg.className = 'msg';
+
+    localStorage.setItem('loggedInUser', user);
+    showWelcome();
+  } else {
+    msg.textContent = "Contraseña incorrecta";
+    msg.className = 'err';
+  }
+}
+
+// Mostrar mensaje de bienvenida si está logueado
+function showWelcome() {
+  const user = localStorage.getItem('loggedInUser');
+  if (user) {
+    document.getElementById('welcomeMsg').style.display = 'block';
+    document.getElementById('userName').textContent = user;
+  } else {
+    document.getElementById('welcomeMsg').style.display = 'none';
+  }
+}
+
+// Cerrar sesión
+function logout() {
+  localStorage.removeItem('loggedInUser');
+  document.getElementById('logMsg').textContent = "Sesión cerrada";
+  document.getElementById('welcomeMsg').style.display = 'none';
+}
+
+showWelcome();
+</script>
+</body>
+</html>

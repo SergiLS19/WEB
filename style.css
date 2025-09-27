@@ -1,0 +1,4 @@
+body { font-family: Arial; max-width: 400px; margin: 40px auto; }
+    input, button { width: 100%; padding: 10px; margin: 8px 0; }
+    .msg { margin: 10px 0; color: green; }
+    .err { color: red; }
